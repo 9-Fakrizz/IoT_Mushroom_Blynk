@@ -1,0 +1,15 @@
+When Pi is running, the mushroom service will run automatically.
+When you need to config or run your code you need to stop the service first!
+
+
+#for checking the service status
+$ journalctl -u mushroom.service -f
+
+#for stop service
+$ sudo systemctl stop mushroom.service
+
+#for set environment and run main code (without display)(headless)
+$ source /home/ussy/venv/bin/activate && python /home/ussy/main_mushroom.py
+
+#for set environment and run main code (with display)(gui)(can work only you connect monitor/remote)
+$ source /home/ussy/venv/bin/activate && python /home/ussy/main_mushroom_viewer.py
