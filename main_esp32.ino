@@ -30,6 +30,8 @@ bool autoMode = false;
 bool found_mushroom = false;
 unsigned long lastSensorTime = 0;
 const unsigned long sensorInterval = 2000; // 2 sec update
+const unsigned long interval = 12UL * 60UL * 60UL * 1000UL; // 12 hours in milliseconds
+unsigned long currentMillis;
 
 // Relay states
 bool relay1State = HIGH;
@@ -80,6 +82,7 @@ void setup() {
   }
 
   Blynk.virtualWrite(V7, 0); // set mushroom status to 0
+  currentMillis = millis();
 }
 
 // ====== Loop ======
@@ -101,6 +104,8 @@ void loop() {
         Serial.println("Mushroom FOUND!");
         // update Blynk or LED here
         Blynk.virtualWrite(V7, 1);
+        Blynk.logEvent("time_to_harvest", "A mushroom has been detected!");
+
       } else {
         Serial.println("Mushroom NOT found!");
         Blynk.virtualWrite(V7, 0);
@@ -132,16 +137,41 @@ void readSensors() {
 
   // --- Auto Control Logic ---
   if (autoMode) {
+    // Check if 12 hours have passed
+    if (millis() - currentMillis >= interval) {
+      Serial.println("Hello 12 hr");
+      digitalWrite(RELAY2, !digitalRead(RELAY2));
+      Blynk.virtualWrite(V6, digitalRead(RELAY2));
+      currentMillis = millis();
+    }
+
+    // temp auto
     if (temp > 35) {
       setRelay(RELAY3, 1, relay3State); // Fan ON
       setRelay(RELAY1, 0, relay1State); // Heater OFF
+      Blynk.virtualWrite(V4, 1);
+      Blynk.virtualWrite(V5, 0);
     } else if (temp < 30) {
       setRelay(RELAY1, 1, relay1State); // Heater ON
       setRelay(RELAY3, 0, relay3State); // Fan OFF
+      Blynk.virtualWrite(V4, 0);
+      Blynk.virtualWrite(V5, 1);
     } else {
       setRelay(RELAY1, 0, relay1State);
       setRelay(RELAY3, 0, relay3State);
+      Blynk.virtualWrite(V4, 0);
+      Blynk.virtualWrite(V5, 0);
     }
+    
+    // humid auto
+    if (humid < 65){
+      digitalWrite(RELAY4, 0);
+      Blynk.virtualWrite(V3, 1);
+    }else {
+      digitalWrite(RELAY4, 1);
+      Blynk.virtualWrite(V3, 0);
+    }    
+ 
   }
 
   // --- Trigger Pi if mushroom close ---
